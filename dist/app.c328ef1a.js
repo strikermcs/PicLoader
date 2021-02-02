@@ -125,9 +125,23 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.upload = upload;
 
+function bytesToSize(bytes) {
+  var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+
+  if (!bytes) {
+    return '0 Byte';
+  }
+
+  var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+  return Math.round(bytes / Math.pow(1024, i)) + " " + sizes[i];
+}
+
 function upload(selector) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var files = [];
   var input = document.querySelector(selector);
+  var preview = document.createElement('div');
+  preview.classList.add('preview');
   var open = document.createElement('button');
   open.classList.add('btn');
   open.textContent = 'Открыть';
@@ -140,6 +154,7 @@ function upload(selector) {
     input.setAttribute('accept', options.accept.join(','));
   }
 
+  input.insertAdjacentElement('afterend', preview);
   input.insertAdjacentElement('afterend', open);
 
   var triggerInput = function triggerInput() {
@@ -150,10 +165,44 @@ function upload(selector) {
     if (!event.target.files.length) {
       return;
     }
+
+    files = Array.from(event.target.files);
+    preview.innerHTML = '';
+    files.forEach(function (file) {
+      if (!file.type.match('image')) {
+        return;
+      }
+
+      var reader = new FileReader();
+
+      reader.onload = function (ev) {
+        var src = ev.target.result;
+        preview.insertAdjacentHTML('afterbegin', "\n                \n                <div class = \"preview-image\">\n                <div class = \"preview-remove\" data-name=\"".concat(file.name, "\">&times;</div>\n                <img src=\"").concat(src, "\" alt=\"").concat(file.name, "\" />\n                <div class=\"preview-info\">\n                    <span>").concat(file.name, "</span>\n                    ").concat(bytesToSize(file.size), "\n                </div>\n                </div>\n                "));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  var removeHandler = function removeHandler(event) {
+    if (!event.target.dataset.name) {
+      return;
+    }
+
+    var name = event.target.dataset.name;
+    files = files.filter(function (file) {
+      return file.name !== name;
+    });
+    var block = preview.querySelector("[data-name=\"".concat(name, "\"]")).closest('.preview-image');
+    block.classList.add('removing');
+    setTimeout(function () {
+      return block.remove();
+    }, 300); // block.remove()
   };
 
   open.addEventListener('click', triggerInput);
   input.addEventListener('change', changeHandler);
+  preview.addEventListener('click', removeHandler);
 }
 },{}],"app.js":[function(require,module,exports) {
 "use strict";
