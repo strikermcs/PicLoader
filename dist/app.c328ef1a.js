@@ -125,6 +125,18 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.upload = upload;
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
 function bytesToSize(bytes) {
   var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
 
@@ -136,15 +148,37 @@ function bytesToSize(bytes) {
   return Math.round(bytes / Math.pow(1024, i)) + " " + sizes[i];
 }
 
+var element = function element(tag) {
+  var classes = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  var content = arguments.length > 2 ? arguments[2] : undefined;
+  var node = document.createElement(tag);
+
+  if (classes.length) {
+    var _node$classList;
+
+    (_node$classList = node.classList).add.apply(_node$classList, _toConsumableArray(classes));
+  }
+
+  if (content) {
+    node.textContent = content;
+  }
+
+  return node;
+};
+
+function noop() {}
+
 function upload(selector) {
+  var _options$onUpload;
+
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var files = [];
   var input = document.querySelector(selector);
-  var preview = document.createElement('div');
-  preview.classList.add('preview');
-  var open = document.createElement('button');
-  open.classList.add('btn');
-  open.textContent = 'Открыть';
+  var onUpload = (_options$onUpload = options.onUpload) !== null && _options$onUpload !== void 0 ? _options$onUpload : noop;
+  var preview = element('div', ['preview']);
+  var open = element('button', ['btn'], 'Открыть');
+  var upload = element('button', ['btn', 'primary'], 'Загрузить');
+  upload.style.display = 'none';
 
   if (options.multi) {
     input.setAttribute('multiple', true);
@@ -155,6 +189,7 @@ function upload(selector) {
   }
 
   input.insertAdjacentElement('afterend', preview);
+  input.insertAdjacentElement('afterend', upload);
   input.insertAdjacentElement('afterend', open);
 
   var triggerInput = function triggerInput() {
@@ -168,6 +203,7 @@ function upload(selector) {
 
     files = Array.from(event.target.files);
     preview.innerHTML = '';
+    upload.style.display = 'inline';
     files.forEach(function (file) {
       if (!file.type.match('image')) {
         return;
@@ -193,16 +229,36 @@ function upload(selector) {
     files = files.filter(function (file) {
       return file.name !== name;
     });
+
+    if (!files.length) {
+      upload.style.display = 'none';
+    }
+
     var block = preview.querySelector("[data-name=\"".concat(name, "\"]")).closest('.preview-image');
     block.classList.add('removing');
     setTimeout(function () {
       return block.remove();
-    }, 300); // block.remove()
+    }, 300);
+  };
+
+  var clearPreview = function clearPreview(el) {
+    el.style.bottom = '4px';
+    el.innerHTML = '<div class="preview-info-progress"></div>';
+  };
+
+  var uploadHandler = function uploadHandler() {
+    preview.querySelectorAll('.preview-remove').forEach(function (e) {
+      return e.remove();
+    });
+    var previewInfo = preview.querySelectorAll('.preview-info');
+    previewInfo.forEach(clearPreview);
+    onUpload(files);
   };
 
   open.addEventListener('click', triggerInput);
   input.addEventListener('change', changeHandler);
   preview.addEventListener('click', removeHandler);
+  upload.addEventListener('click', uploadHandler);
 }
 },{}],"app.js":[function(require,module,exports) {
 "use strict";
@@ -211,7 +267,10 @@ var _upload = require("./upload.js");
 
 (0, _upload.upload)('#file', {
   multi: true,
-  accept: ['.png', '.jpg', '.jpeg', '.gif']
+  accept: ['.png', '.jpg', '.jpeg', '.gif'],
+  onUpload: function onUpload(files) {
+    console.log('Files:', files);
+  }
 });
 },{"./upload.js":"upload.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
@@ -241,7 +300,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63842" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51827" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
